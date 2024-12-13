@@ -22,10 +22,18 @@ util::get_unique_directory_paths "${FILES[@]}"
 error=0
 
 for path in "${UNIQUE_PATHS[@]}"; do
-  pushd "$path" > /dev/null
+  if [[ $NO_CD -eq 1 ]]; then
+    packer init -- "$path" > /dev/null
+    packer validate "${ARGS[@]}" -- "$path"
+    lerror=$?
+  else
+    pushd "$path" > /dev/null
+    packer init . > /dev/null
+    packer validate "${ARGS[@]}" .
+    lerror=$?
+  fi
 
-  packer init . > /dev/null
-  if ! packer validate "${ARGS[@]}" .; then
+  if [[ $lerror -ne 0 ]]; then
     error=1
     echo
     echo "Failed path: $path"
